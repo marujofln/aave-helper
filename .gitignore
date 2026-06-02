@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+dist/
+*.egg-info/
+.pytest_cache/
+
+# Environment
+.env
+
+# Editor
+.DS_Store
+*.swp
+*.swo
+
+# Claude
+.claude/

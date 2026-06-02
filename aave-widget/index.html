@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aave Health Factor Simulator</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f5f5f3;
+      --color-background-tertiary: #eeede8;
+      --color-text-primary: #1a1a18;
+      --color-text-secondary: #6b6b67;
+      --color-text-tertiary: #9a9a95;
+      --color-border-tertiary: rgba(0,0,0,0.12);
+      --color-border-secondary: rgba(0,0,0,0.22);
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #1e1e1c;
+        --color-background-secondary: #2a2a28;
+        --color-background-tertiary: #323230;
+        --color-text-primary: #f0efea;
+        --color-text-secondary: #a0a09b;
+        --color-text-tertiary: #6b6b67;
+        --color-border-tertiary: rgba(255,255,255,0.10);
+        --color-border-secondary: rgba(255,255,255,0.18);
+      }
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-background-tertiary);
+      color: var(--color-text-primary);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 680px;
+    }
+
+    h1 {
+      font-size: 18px;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      color: var(--color-text-primary);
+    }
+
+    .metric-card {
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      padding: 1rem;
+    }
+
+    .metric-label {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin: 0 0 4px;
+    }
+
+    .metric-value {
+      font-size: 18px;
+      font-weight: 500;
+      margin: 0;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 1.5rem;
+    }
+
+    .hf-bar-bg {
+      background: var(--color-border-tertiary);
+      border-radius: 4px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .zone-badge {
+      font-size: 12px;
+      padding: 3px 10px;
+      border-radius: var(--border-radius-md);
+      font-weight: 500;
+    }
+
+    .hf-card {
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .slider-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .slider-header label {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+    }
+
+    .slider-header span {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: #378ADD;
+    }
+
+    .slider-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      margin-top: 4px;
+    }
+
+    .hf-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .hf-label {
+      font-size: 14px;
+      color: var(--color-text-secondary);
+    }
+
+    .hf-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #hf-value {
+      font-size: 28px;
+      font-weight: 500;
+    }
+
+    .hf-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      margin-top: 6px;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 1.25rem;
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #639922;
+      display: inline-block;
+    }
+    .live-dot.stale  { background: #888780; }
+    .live-dot.error  { background: #E24B4A; }
+
+    #price-source {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+    }
+
+    #refresh-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 16px;
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: var(--border-radius-md);
+      border: 0.5px solid var(--color-border-secondary);
+      background: var(--color-background-primary);
+      color: var(--color-text-primary);
+      transition: background 0.15s;
+    }
+
+    #refresh-btn:hover   { background: var(--color-background-secondary); }
+    #refresh-btn:active  { transform: scale(0.97); }
+    #refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    #refresh-btn.loading i { animation: spin 0.8s linear infinite; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .zones-section { margin-bottom: 1.5rem; }
+
+    .zones-title {
+      font-size: 13px;
+      color: var(--color-text-secondary);
+      margin: 0 0 8px;
+    }
+
+    .zones-list {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .zone-tag {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: var(--border-radius-md);
+    }
+
+    .chart-wrapper {
+      position: relative;
+      width: 100%;
+      height: 220px;
+      margin-bottom: 0.5rem;
+    }
+
+    .chart-label {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      text-align: center;
+      margin: 4px 0 0;
+    }
+
+    .api-note {
+      margin-top: 1.5rem;
+      padding: 0.75rem 1rem;
+      background: var(--color-background-secondary);
+      border-radius: var(--border-radius-md);
+      font-size: 12px;
+      color: var(--color-text-secondary);
+      line-height: 1.6;
+    }
+
+    .api-note code {
+      font-family: monospace;
+      background: var(--color-background-tertiary);
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <h1>Aave Health Factor Simulator</h1>
+
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="live-dot stale" id="live-dot"></span>
+      <span id="price-source">Clique em atualizar para buscar o preço</span>
+    </div>
+    <button id="refresh-btn" onclick="fetchPrice()">
+      <i class="ti ti-refresh" aria-hidden="true" style="font-size:15px;"></i> Atualizar preço
+    </button>
+  </div>
+
+  <div class="grid-4">
+    <div class="metric-card">
+      <p class="metric-label">WBTC colateral</p>
+      <p class="metric-value">0.50000 BTC</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Dívida total</p>
+      <p class="metric-value">$20,000</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Liq. threshold</p>
+      <p class="metric-value">78%</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Preço de liquidação</p>
+      <p class="metric-value" style="color:#E24B4A;">$51,282</p>
+    </div>
+  </div>
+
+  <div class="slider-section">
+    <div class="slider-header">
+      <label for="btc-slider">Preço do Bitcoin</label>
+      <span id="btc-display">$71,000</span>
+    </div>
+    <input type="range" min="40000" max="150000" step="500" value="71000"
+           id="btc-slider" oninput="onSlider(this.value)">
+    <div class="slider-ticks">
+      <span>$40k</span><span>$95k</span><span>$150k</span>
+    </div>
+  </div>
+
+  <div class="hf-card">
+    <div class="hf-header">
+      <span class="hf-label">Health Factor</span>
+      <div class="hf-right">
+        <span id="hf-badge" class="zone-badge"></span>
+        <span id="hf-value">1.450</span>
+      </div>
+    </div>
+    <div class="hf-bar-bg">
+      <div id="hf-bar" style="height:10px; border-radius:4px; transition:width 0.3s, background 0.3s;"></div>
+    </div>
+    <div class="hf-ticks">
+      <span>☠️ HF 1.0</span><span>⚠️ 1.5</span><span>✅ 2.0+</span>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="metric-card">
+      <p class="metric-label">Colateral (USD)</p>
+      <p class="metric-value" id="col-usd">$32,000</p>
+    </div>
+    <div class="metric-card">
+      <p class="metric-label">Margem de queda</p>
+      <p class="metric-value" id="margin-pct">-31.0%</p>
+    </div>
+  </div>
+
+  <div class="zones-section">
+    <p class="zones-title">Zonas de risco</p>
+    <div class="zones-list">
+      <span class="zone-tag" style="background:#FCEBEB; color:#A32D2D;">☠️ HF &lt; 1.05 — liquidação iminente</span>
+      <span class="zone-tag" style="background:#FAEEDA; color:#854F0B;">⚠️ HF 1.05–1.5 — zona de risco</span>
+      <span class="zone-tag" style="background:#EAF3DE; color:#3B6D11;">✅ HF &gt; 1.5 — seguro</span>
+    </div>
+  </div>
+
+  <div class="chart-wrapper">
+    <canvas id="hfChart" role="img"
+      aria-label="Gráfico de Health Factor vs preço do Bitcoin de $40k a $150k">
+      Health Factor sobe conforme o preço do Bitcoin aumenta, cruzando 1.0 em torno de $49k.
+    </canvas>
+  </div>
+  <p class="chart-label">Health Factor × preço do Bitcoin</p>
+
+  <div class="api-note">
+    <strong>Nota:</strong> O botão "Atualizar preço" usa a API da Anthropic (<code>api.anthropic.com</code>)
+    com web search para buscar o preço atual do Bitcoin. Para funcionar fora do claude.ai,
+    adicione seu <code>x-api-key</code> no cabeçalho da requisição em <code>fetchPrice()</code> no script.
+  </div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+  const WBTC = 0.5;
+  const DEBT = 20000.0;
+  const LT   = 0.78;
+  const LIQ_PRICE = DEBT / (WBTC * LT);
+
+  let chart;
+
+  function calcHF(price)  { return (WBTC * price * LT) / DEBT; }
+
+  function hfColor(hf) {
+    if (hf < 1.05) return '#E24B4A';
+    if (hf < 1.5)  return '#EF9F27';
+    return '#639922';
+  }
+
+  function hfBadge(hf) {
+    if (hf < 1.05) return ['☠️ Liquidação', '#FCEBEB', '#A32D2D'];
+    if (hf < 1.5)  return ['⚠️ Risco',      '#FAEEDA', '#854F0B'];
+    return             ['✅ Seguro',        '#EAF3DE', '#3B6D11'];
+  }
+
+  function fmtUSD(v) { return '$' + Math.round(v).toLocaleString('pt-BR'); }
+
+  const prices = [], hfData = [];
+  for (let p = 40000; p <= 150000; p += 1000) {
+    prices.push(p);
+    hfData.push(parseFloat(calcHF(p).toFixed(4)));
+  }
+
+  function initChart() {
+    const ctx = document.getElementById('hfChart').getContext('2d');
+    chart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: prices.map(p => '$' + (p / 1000) + 'k'),
+        datasets: [
+          {
+            data: hfData,
+            borderColor: '#378ADD',
+            borderWidth: 2,
+            pointRadius: 0,
+            tension: 0.3,
+            fill: false
+          },
+          {
+            data: [],
+            pointRadius: [],
+            pointBackgroundColor: [],
+            borderColor: 'transparent',
+            showLine: false
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: c => 'HF: ' + c.parsed.y.toFixed(3),
+              title: c => 'BTC: ' + c[0].label
+            }
+          }
+        },
+        scales: {
+          x: {
+            ticks: { autoSkip: true, maxTicksLimit: 8, font: { size: 11 } },
+            grid: { display: false }
+          },
+          y: {
+            min: 0, max: 4,
+            ticks: { font: { size: 11 }, callback: v => v.toFixed(1) },
+            grid: { color: 'rgba(128,128,128,0.12)' }
+          }
+        }
+      }
+    });
+  }
+
+  function updateUI(price) {
+    price = parseFloat(price);
+    const hf     = calcHF(price);
+    const col    = WBTC * price;
+    const margin = ((price - LIQ_PRICE) / price) * 100;
+    const [badgeText, bgC, txtC] = hfBadge(hf);
+    const barW   = Math.min(Math.max((hf / 3) * 100, 0), 100);
+
+    document.getElementById('btc-display').textContent       = fmtUSD(price);
+    document.getElementById('btc-slider').value              = Math.min(Math.max(price, 40000), 150000);
+    document.getElementById('hf-value').textContent          = hf.toFixed(3);
+    document.getElementById('hf-value').style.color          = hfColor(hf);
+    document.getElementById('hf-bar').style.width            = barW + '%';
+    document.getElementById('hf-bar').style.background       = hfColor(hf);
+    document.getElementById('col-usd').textContent           = fmtUSD(col);
+    document.getElementById('margin-pct').textContent        = margin.toFixed(1) + '%';
+    document.getElementById('margin-pct').style.color        =
+      margin < 10 ? '#E24B4A' : margin < 25 ? '#EF9F27' : '#639922';
+
+    const badge = document.getElementById('hf-badge');
+    badge.textContent       = badgeText;
+    badge.style.background  = bgC;
+    badge.style.color       = txtC;
+
+    const idx = Math.round((Math.min(Math.max(price, 40000), 150000) - 40000) / 1000);
+    chart.data.datasets[1].data               = prices.map((p, i) => i === idx ? hfData[i] : null);
+    chart.data.datasets[1].pointRadius        = prices.map((p, i) => i === idx ? 7 : 0);
+    chart.data.datasets[1].pointBackgroundColor = prices.map(() => hfColor(hf));
+    chart.update('none');
+  }
+
+  function onSlider(val) { updateUI(val); }
+
+  async function fetchPrice() {
+    const btn = document.getElementById('refresh-btn');
+    const dot = document.getElementById('live-dot');
+    const src = document.getElementById('price-source');
+
+    btn.classList.add('loading');
+    btn.disabled = true;
+    src.textContent = 'Buscando preço via Claude...';
+    dot.className = 'live-dot stale';
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+          messages: [{
+            role: 'user',
+            content: 'What is the current Bitcoin price in USD right now? Reply with ONLY a JSON object in this exact format, no other text: {"price": 95000.50, "source": "source name"}'
+          }]
+        })
+      });
+
+      const data = await resp.json();
+      let price = null, source = 'web search';
+
+      for (const block of data.content) {
+        if (block.type === 'text') {
+          const match = block.text.match(/\{[\s\S]*?"price"\s*:\s*([\d.]+)[\s\S]*?\}/);
+          if (match) {
+            price = parseFloat(match[1]);
+            const srcMatch = block.text.match(/"source"\s*:\s*"([^"]+)"/);
+            if (srcMatch) source = srcMatch[1];
+            break;
+          }
+          const numMatch = block.text.match(/\$?([\d,]+(?:\.\d+)?)/);
+          if (numMatch) price = parseFloat(numMatch[1].replace(/,/g, ''));
+        }
+      }
+
+      if (price && price > 1000 && price < 10000000) {
+        updateUI(price);
+        dot.className = 'live-dot';
+        src.textContent = source + ' · ' + new Date().toLocaleTimeString('pt-BR');
+      } else {
+        throw new Error('Preço inválido retornado');
+      }
+
+    } catch(e) {
+      dot.className = 'live-dot error';
+      src.textContent = 'Erro: ' + (e.message || 'falha na busca');
+    }
+
+    btn.classList.remove('loading');
+    btn.disabled = false;
+  }
+
+  initChart();
+  updateUI(71000);
+</script>
+</body>
+</html>
