@@ -19,6 +19,8 @@ aave-helper/
 ## Getting started
 
 ```bash
+git clone https://github.com/marujofln/aave-helper.git
+cd aave-helper
 cd aave-backend
 uv run dev        # development server with auto-reload on :8000
 uv run start      # production server on :8000
