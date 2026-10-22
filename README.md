@@ -89,8 +89,9 @@ cp .env.example .env
 
 ```bash
 cd aave-backend
-uv run pytest tests/ -v                 # 70 unit tests (no network)
-uv run pytest tests/ -v -m integration  # + 6 live CoinGecko tests
+uv run --extra dev pytest tests/ -v -m "not integration"  # 70 unit tests (no network)
+uv run --extra dev pytest tests/ -v -m integration        # 6 live CoinGecko tests only
+uv run --extra dev pytest tests/ -v                       # everything
 ```
 
 ### Test coverage

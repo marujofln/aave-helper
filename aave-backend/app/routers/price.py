@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Request
 
+from app.config import settings
 from app.limiter import limiter
 from app.models import HealthFactorResponse, PriceResponse
 from app.services import price_client, health_factor
@@ -10,7 +11,7 @@ router = APIRouter(prefix="/api", tags=["price"])
 
 
 @router.get("/price", response_model=PriceResponse)
-@limiter.limit("10/minute")
+@limiter.limit(settings.rate_limit_price)
 async def get_price(request: Request, asset: str = "bitcoin") -> PriceResponse:
     try:
         price, source = await price_client.fetch_price(asset)
