@@ -24,20 +24,9 @@ Abra o arquivo `index.html` diretamente no navegador — não requer servidor.
 
 ## Atualização de preço em tempo real
 
-O botão usa a API da Anthropic com web search. Dentro do **claude.ai** funciona automaticamente.
+O botão usa a API da Anthropic com web search e só funciona dentro do **claude.ai**.
 
-Para usar **fora do claude.ai**, adicione sua chave de API no cabeçalho da requisição em `fetchPrice()`:
-
-```javascript
-headers: {
-  'Content-Type': 'application/json',
-  'x-api-key': 'SUA_CHAVE_AQUI',
-  'anthropic-version': '2023-06-01',
-  'anthropic-dangerous-direct-browser-access': 'true'
-}
-```
-
-Chaves em: https://console.anthropic.com
+Não coloque uma chave de API no `index.html`: qualquer pessoa que abrir a página consegue lê-la. Para preço em tempo real fora do claude.ai, use o backend em [`../aave-backend`](../aave-backend), que busca o preço na CoinGecko sem precisar de chave.
 
 ## Dependências (CDN)
 
